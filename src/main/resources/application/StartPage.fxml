@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.text.*?>
+<?import javafx.scene.control.*?>
+<?import java.lang.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="500.0" prefWidth="500.0" style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="application.StartPageController">
+   <children>
+      <Label layoutX="35.0" layoutY="50.0" prefHeight="50.0" prefWidth="260.0" text="Broj procesorskih jezgri:" textAlignment="CENTER" textFill="#1e656d">
+         <font>
+            <Font name="Franklin Gothic Medium" size="19.0" />
+         </font>
+      </Label>
+      <TextField fx:id="numberOfCoresField" alignment="CENTER" layoutX="305.0" layoutY="50.0" prefHeight="50.0" prefWidth="115.0" style="-fx-background-color: #f1f1f2; -fx-border-radius: 15; -fx-background-radius: 15; -fx-border-color: #bcbabe;">
+         <font>
+            <Font name="Arial" size="19.0" />
+         </font></TextField>
+      <Label layoutX="35.0" layoutY="150.0" prefHeight="50.0" prefWidth="260.0" text="Broj konkurentnih zadataka:" textAlignment="CENTER" textFill="#1e656d">
+         <font>
+            <Font name="Franklin Gothic Medium" size="19.0" />
+         </font>
+      </Label>
+      <TextField fx:id="numberOfTasksField" alignment="CENTER" layoutX="305.0" layoutY="150.0" prefHeight="50.0" prefWidth="115.0" style="-fx-background-color: #f1f1f2; -fx-background-radius: 15; -fx-border-radius: 15; -fx-border-color: #bcbabe;">
+         <font>
+            <Font name="Arial" size="19.0" />
+         </font></TextField>
+      <CheckBox fx:id="preemptiveCheck" layoutX="120.0" layoutY="250.0" mnemonicParsing="false" prefHeight="40.0" prefWidth="260.0" selected="true" style="-fx-background-color: white;" text="Preventivno raspoređivanje" textFill="#1e656d">
+         <font>
+            <Font name="Franklin Gothic Medium" size="18.0" />
+         </font>
+      </CheckBox>
+      <Label fx:id="bannerLabel" alignment="CENTER" layoutX="50.0" layoutY="320.0" prefHeight="50.0" prefWidth="400.0" text="Niste unijeli ispravne podatke!" textAlignment="CENTER" textFill="#970c10" visible="false">
+         <font>
+            <Font name="Arial" size="17.0" />
+         </font>
+      </Label>
+      <Button layoutX="200.0" layoutY="391.0" mnemonicParsing="false" onAction="#startScheduler" prefHeight="50.0" prefWidth="100.0" style="-fx-background-color: #f1f1f2; -fx-border-color: #1e656d; -fx-background-radius: 10; -fx-border-radius: 10;" text="Pokreni" textAlignment="CENTER" textFill="#a11f0c">
+         <font>
+            <Font name="Franklin Gothic Medium" size="20.0" />
+         </font>
+      </Button>
+   </children>
+</AnchorPane>

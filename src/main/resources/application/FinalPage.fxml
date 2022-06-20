@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.text.*?>
+<?import javafx.scene.control.*?>
+<?import java.lang.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="750.0" prefWidth="900.0" style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="application.FinalPageController">
+   <children>
+      <TableView fx:id="taskTable" layoutX="14.0" layoutY="14.0" prefHeight="400.0" prefWidth="700.0" style="-fx-background-color: #f1f1f2; -fx-border-color: #bcbabe;">
+         <columns>
+            <TableColumn fx:id="taskColumn" prefWidth="150.0" text="Zadatak" />
+            <TableColumn fx:id="progressColumn" prefWidth="546.0" />
+         </columns>
+      </TableView>
+      <Button fx:id="pauseTaskButton" layoutX="750.0" layoutY="50.0" mnemonicParsing="false" prefHeight="42.0" prefWidth="100.0" style="-fx-background-color: #f1f1f2; -fx-border-color: #1e656d; -fx-background-radius: 10; -fx-border-radius: 10;" text="Pauziraj" textAlignment="CENTER" textFill="#a11f0c">
+         <font>
+            <Font name="Franklin Gothic Medium" size="19.0" />
+         </font>
+      </Button>
+      <Button fx:id="restartTaskButton" layoutX="750.0" layoutY="150.0" mnemonicParsing="false" prefHeight="42.0" prefWidth="100.0" style="-fx-background-color: #f1f1f2; -fx-border-color: #1e656d; -fx-background-radius: 10; -fx-border-radius: 10;" text="Pokreni" textAlignment="CENTER" textFill="#a11f0c">
+         <font>
+            <Font name="Franklin Gothic Medium" size="19.0" />
+         </font>
+      </Button>
+      <Button fx:id="terminateTaskButton" layoutX="750.0" layoutY="250.0" mnemonicParsing="false" prefHeight="42.0" prefWidth="100.0" style="-fx-background-color: #f1f1f2; -fx-border-color: #1e656d; -fx-background-radius: 10; -fx-border-radius: 10;" text="Zaustavi" textAlignment="CENTER" textFill="#a11f0c">
+         <font>
+            <Font name="Franklin Gothic Medium" size="19.0" />
+         </font>
+      </Button>
+      <Separator layoutY="450.0" prefWidth="900.0" style="-fx-background-color: #f1f1f2;" />
+      <Label alignment="CENTER" layoutX="14.0" layoutY="466.0" prefHeight="40.0" prefWidth="250.0" text="Dodaj novi zadatak" textAlignment="CENTER" textFill="#a11f0c">
+         <font>
+            <Font name="Franklin Gothic Medium" size="22.0" />
+         </font>
+      </Label>
+      <Label layoutX="55.0" layoutY="515.0" prefHeight="42.0" prefWidth="190.0" text="Prioritet:" textFill="#1e656d">
+         <font>
+            <Font name="Franklin Gothic Medium" size="19.0" />
+         </font>
+      </Label>
+      <Label layoutX="55.0" layoutY="575.0" prefHeight="42.0" prefWidth="190.0" text="Nivo paralelizma:" textFill="#1e656d">
+         <font>
+            <Font name="Franklin Gothic Medium" size="19.0" />
+         </font>
+      </Label>
+      <Label layoutX="55.0" layoutY="635.0" prefHeight="42.0" prefWidth="190.0" text="Vrijeme izvršavanja [s]:" textFill="#1e656d">
+         <font>
+            <Font name="Franklin Gothic Medium" size="19.0" />
+         </font>
+      </Label>
+      <TextField fx:id="priorityTextField" alignment="CENTER" layoutX="265.0" layoutY="515.0" prefHeight="42.0" prefWidth="100.0" style="-fx-background-color: #f1f1f2; -fx-border-radius: 15; -fx-background-radius: 15; -fx-border-color: #bcbabe;">
+         <font>
+            <Font name="Arial" size="19.0" />
+         </font>
+      </TextField>
+      <TextField fx:id="parallelismDegreeField" alignment="CENTER" layoutX="265.0" layoutY="575.0" prefHeight="42.0" prefWidth="100.0" style="-fx-background-color: #f1f1f2; -fx-border-radius: 15; -fx-background-radius: 15; -fx-border-color: #bcbabe;">
+         <font>
+            <Font name="Arial" size="19.0" />
+         </font>
+      </TextField>
+      <TextField fx:id="executionTimeField" alignment="CENTER" layoutX="265.0" layoutY="635.0" prefHeight="42.0" prefWidth="100.0" style="-fx-background-color: #f1f1f2; -fx-border-radius: 15; -fx-background-radius: 15; -fx-border-color: #bcbabe;">
+         <font>
+            <Font name="Arial" size="19.0" />
+         </font>
+      </TextField>
+      <Label layoutX="55.0" layoutY="695.0" prefHeight="42.0" prefWidth="120.0" text="Krajnji rok:" textFill="#1e656d">
+         <font>
+            <Font name="Franklin Gothic Medium" size="19.0" />
+         </font>
+      </Label>
+      <DatePicker fx:id="datePicker" layoutX="184.0" layoutY="695.0" prefHeight="42.0" prefWidth="160.0" />
+      <TextField fx:id="hoursField" alignment="CENTER" layoutX="364.0" layoutY="695.0" prefHeight="42.0" prefWidth="45.0" style="-fx-background-color: #f1f1f2; -fx-border-color: #bcbabe;" text="23">
+         <font>
+            <Font name="Arial" size="18.0" />
+         </font>
+      </TextField>
+      <Label alignment="CENTER" layoutX="409.0" layoutY="695.0" prefHeight="42.0" prefWidth="10.0" text=":" textAlignment="CENTER">
+         <font>
+            <Font name="Arial Bold" size="18.0" />
+         </font>
+      </Label>
+      <TextField fx:id="minutesField" alignment="CENTER" layoutX="419.0" layoutY="695.0" prefHeight="42.0" prefWidth="45.0" style="-fx-background-color: #f1f1f2; -fx-border-color: #bcbabe;" text="59">
+         <font>
+            <Font name="Arial" size="18.0" />
+         </font>
+      </TextField>
+      <Label alignment="CENTER" layoutX="464.0" layoutY="695.0" prefHeight="42.0" prefWidth="10.0" text=":" textAlignment="CENTER">
+         <font>
+            <Font name="Arial Bold" size="18.0" />
+         </font>
+      </Label>
+      <TextField fx:id="secondsField" alignment="CENTER" layoutX="474.0" layoutY="695.0" prefHeight="42.0" prefWidth="45.0" style="-fx-background-color: #f1f1f2; -fx-border-color: #bcbabe;" text="59">
+         <font>
+            <Font name="Arial" size="18.0" />
+         </font>
+      </TextField>
+      <Button layoutX="720.0" layoutY="515.0" mnemonicParsing="false" onAction="#chooseResources" prefHeight="42.0" prefWidth="160.0" style="-fx-background-color: #f1f1f2; -fx-border-color: #1e656d;" text="Izaberi resurse" textAlignment="CENTER" textFill="#1e656d">
+         <font>
+            <Font name="Franklin Gothic Medium" size="19.0" />
+         </font>
+      </Button>
+      <ComboBox fx:id="taskTypeComboBox" layoutX="531.0" layoutY="515.0" prefHeight="42.0" prefWidth="160.0" style="-fx-background-color: #f1f1f2; -fx-border-color: #1e656d;" />
+      <Button fx:id="addTaskButton" layoutX="561.0" layoutY="614.0" mnemonicParsing="false" prefHeight="42.0" prefWidth="100.0" style="-fx-background-color: #f1f1f2; -fx-border-color: #1e656d; -fx-background-radius: 10; -fx-border-radius: 10;" text="Dodaj" textAlignment="CENTER" textFill="#a11f0c">
+         <font>
+            <Font name="Franklin Gothic Medium" size="19.0" />
+         </font>
+      </Button>
+      <Button fx:id="serializeTaskButton" layoutX="750.0" layoutY="350.0" mnemonicParsing="false" prefHeight="42.0" prefWidth="100.0" style="-fx-background-color: #f1f1f2; -fx-border-color: #1e656d; -fx-background-radius: 10; -fx-border-radius: 10;" text="Sačuvaj" textAlignment="CENTER" textFill="#a11f0c">
+         <font>
+            <Font name="Franklin Gothic Medium" size="19.0" />
+         </font>
+      </Button>
+      <Button fx:id="deserializeTaskButton" layoutX="750.0" layoutY="614.0" mnemonicParsing="false" prefHeight="42.0" prefWidth="100.0" style="-fx-background-color: #f1f1f2; -fx-border-color: #1e656d; -fx-background-radius: 10; -fx-border-radius: 10;" text="Učitaj" textAlignment="CENTER" textFill="#a11f0c">
+         <font>
+            <Font name="Franklin Gothic Medium" size="19.0" />
+         </font>
+      </Button>
+   </children>
+</AnchorPane>
