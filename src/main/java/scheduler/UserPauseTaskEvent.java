@@ -15,17 +15,15 @@ public class UserPauseTaskEvent extends SchedulingEvent {
     public void execute() {
         if(taskToPause == null)
             return;
+        taskToPause.pause(true);
+        if(!scheduler.userPausedTasks.contains(taskToPause))
+            scheduler.userPausedTasks.add(taskToPause);
         if(scheduler.executingTasks.contains(taskToPause)){
             scheduler.executingTasks.remove(taskToPause);
             scheduler.numberOfFreeCores += taskToPause.parallelismDegree;
-            taskToPause.pause(true);
-            scheduler.userPausedTasks.add(taskToPause);
         }
-        if(scheduler.pendingTasks.contains(taskToPause)){
-            taskToPause.pause(true);
+        if(scheduler.pendingTasks.contains(taskToPause))
             scheduler.pendingTasks.remove(taskToPause);
-            scheduler.userPausedTasks.add(taskToPause);
-        }
         scheduler.eventQueue.offer(new ScheduleTasksEvent(scheduler));
     }
 }

@@ -4,7 +4,6 @@ import scheduler.task.SchedulableTask;
 import scheduler.task.TaskState;
 
 public class AddTaskEvent extends SchedulingEvent{
-
     protected SchedulableTask taskToAdd;
 
     public AddTaskEvent(TaskScheduler scheduler, SchedulableTask task){

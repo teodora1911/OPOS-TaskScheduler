@@ -2,7 +2,7 @@ package scheduler.task;
 
 import java.io.Serializable;
 
-public class CancellationToken implements Serializable {
+public class PauseToken implements Serializable {
 
     protected boolean paused = false;
     public transient Object lock = new Object();

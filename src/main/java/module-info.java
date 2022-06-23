@@ -14,4 +14,6 @@ module application.taskscheduler {
 
     opens application to javafx.fxml;
     exports application;
+    exports scheduler;
+    exports scheduler.task;
 }

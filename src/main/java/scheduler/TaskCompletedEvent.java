@@ -15,11 +15,11 @@ public class TaskCompletedEvent extends SchedulingEvent {
     public void execute(){
         if(completedTask == null)
             return;
+        completedTask.terminate();
         if(scheduler.executingTasks.contains(completedTask)){
             scheduler.executingTasks.remove(completedTask);
             scheduler.numberOfFreeCores += completedTask.parallelismDegree;
         }
         scheduler.eventQueue.offer(new ScheduleTasksEvent(scheduler));
-        completedTask.terminate();
     }
 }

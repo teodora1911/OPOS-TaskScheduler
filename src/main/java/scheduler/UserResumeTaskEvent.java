@@ -15,10 +15,10 @@ public class UserResumeTaskEvent extends SchedulingEvent {
     public void execute(){
         if(taskToResume == null)
             return;
-        if(scheduler.userPausedTasks.contains(taskToResume)){
-            taskToResume.resume(true);
-            scheduler.pendingTasks.offer(taskToResume);
-            scheduler.eventQueue.offer(new ScheduleTasksEvent(scheduler));
-        }
+        taskToResume.resume(true);
+        if(scheduler.userPausedTasks.contains(taskToResume))
+            scheduler.userPausedTasks.remove(taskToResume);
+        scheduler.pendingTasks.offer(taskToResume);
+        scheduler.eventQueue.offer(new ScheduleTasksEvent(scheduler));
     }
 }

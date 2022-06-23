@@ -1,8 +1,6 @@
 package scheduler.task;
 
 import application.Utility;
-import javafx.application.Platform;
-import javafx.scene.control.ProgressBar;
 
 import javax.imageio.ImageIO;
 import java.awt.Color;
@@ -26,15 +24,13 @@ public class PixelationTask extends SchedulableTask implements Serializable {
     public static int Step;
     public static String Extension;
     public String intermediateFolderPath;
-    protected ArrayList<PixelationThread> threads;
-    protected int processedRows = 0;
-    protected transient Object processingLock = new Object();
-    protected int totalRows = 0;
+    public ArrayList<PixelationThread> threads;
+    public int processedRows = 0;
+    public transient Object processingLock = new Object();
+    public int totalRows = 0;
 
-//    public PixelationTask() { super(); }
-
-    public PixelationTask(int priority, long executionTime, LocalDateTime deadline, int parallelismDegree, String outputFolderPath, ArrayList<Resource> resources, ProgressBar progressBar, Consumer<SchedulableTask> updateProgress) {
-        super(priority, TaskType.PIXELATION, executionTime, deadline, parallelismDegree, outputFolderPath, resources, progressBar, updateProgress);
+    public PixelationTask(int priority, long executionTime, LocalDateTime deadline, int parallelismDegree, String outputFolderPath, ArrayList<Resource> resources, Consumer<SchedulableTask> updateProgress) {
+        super(priority, TaskType.PIXELATION, executionTime, deadline, parallelismDegree, outputFolderPath, resources, updateProgress);
         intermediateFolderPath = Utility.IntermediateFolderPath + File.separator + "task-" + this.id;
         File intermediateFolder = new File(intermediateFolderPath);
         if(!intermediateFolder.exists())
@@ -55,15 +51,15 @@ public class PixelationTask extends SchedulableTask implements Serializable {
         System.out.println(this.toString() + " is running.");
         try{
             while(!isTerminated()){
-                // check for pause
-                System.out.println("Checking for user pause.");
+                // provjerava da li je pauziran
+               // System.out.println("Checking for user pause.");
                 if(userToken.isPaused()){
                     threads.forEach(t -> t.token.pause());
                     synchronized (userToken.lock){
                         userToken.lock.wait();
                     }
                 }
-                System.out.println("Checking for scheduler pause.");
+               // System.out.println("Checking for scheduler pause.");
                 if(schedulerToken.isPaused()){
                     threads.forEach(t -> t.token.pause());
                     synchronized (schedulerToken.lock){
@@ -71,70 +67,47 @@ public class PixelationTask extends SchedulableTask implements Serializable {
                     }
                 }
                 synchronized (terminated) {
-                    System.out.println("Initializing lastAccessed.");
+                   // System.out.println("Initializing lastAccessed.");
                     lastAccessed = Instant.now();
                 }
-                // try to lock resources
-                System.out.println("Acquiring resources!");
+                // zaključavanje svih resursa koje zadatak još nije obradio
                 boolean acquired;
                 List<Resource> requiredResources;
                 synchronized (resources){
                     requiredResources = resources.entrySet().stream().filter(r -> !r.getValue()).map(r -> r.getKey()).collect(Collectors.toList());
                 }
+                // ako je lista zahtjevanih resursa prazna, to znači da su obrađeni svi resursi
+                if(requiredResources.isEmpty()){
+                    finish();
+                    return;
+                }
                 while(!(acquired = Utility.Scheduler.lockResources(requiredResources, this))){
-                    if(isTerminated()){
-                        // scheduler.unlockResources(this); - ako zadatak nije zaključao sve resurse, nije nijedan
-                        threads.forEach(t -> t.token.resume());
-                        Utility.Scheduler.cancelTask(this);
+                    if(isPaused())
                         break;
+                    try{
+                        Thread.sleep(1);
+                    } catch (InterruptedException exc){
+                        System.err.println(exc.getMessage());
                     }
-                   // scheduler.unlockResources(this);
                 }
 
                 if(acquired){
-                    System.out.println("Resources acquired.");
-                    setTaskPriority(MaxPriority);
-                    // release all threads
+                   // System.out.println("Resources acquired.");
+                    // obavijesti sve niti za nastavak obrade
                     threads.forEach(t -> t.token.resume());
-                    while(!isPaused()){
+                    while(!isPaused()){ // terminated == false && isPaused() == false
                         if(threads.stream().allMatch(t -> t.completed)){
-                            Utility.Scheduler.unlockResources(this);
-                            terminate();
-                            Utility.Scheduler.completedTask(this);
-                            if(resources.size() == 1 && threads.size() > 1){
-                                System.out.println(this.toString() + " is copying data ...");
-                                // ako se obrađivao jedan resurs od strane više niti, treba da se kopira iz intermediate u output
-                                resources.forEach((r, v) -> resources.replace(r, true));
-                                String resourceName = resources.keySet().iterator().next().name;
-                                Path source = Paths.get(intermediateFolderPath + File.separator + "Pixelation-" + resourceName);
-                                Path destination = Paths.get(outputFolderPath + File.separator + "Pixelated-T" + id + "-" + resourceName);
-                                try{
-                                    Files.copy(source, destination, StandardCopyOption.COPY_ATTRIBUTES);
-                                } catch (IOException e){
-                                    e.printStackTrace();
-                                }
-                            }
-                            // done processing
+                            finish();
                             return;
                         }
                     }
-                    threads.forEach(t -> t.token.pause());
-                    // set priority back to original priority
-                    setTaskPriority(getGivenPriority());
-                    Utility.Scheduler.unlockResources(this);
-                    synchronized (terminated) {
-                        lastAccessed = null;
-                    }
-                } else {
-                    // it is terminated and all resources are unlocked
-                    // do nothing
-                    System.out.println("Resources not acquired.");
                 }
             }
             Utility.Scheduler.cancelTask(this);
         } catch (InterruptedException exc){
             exc.printStackTrace();
         }
+        System.out.println("Task is finished.");
     }
 
     private void initializeThreads() {
@@ -146,21 +119,19 @@ public class PixelationTask extends SchedulableTask implements Serializable {
             }
         }
         System.out.println("Total rows = " + totalRows);
-        if(resources.size() == 1 && threads.size() > 1){ // if processing just one file with multiple threads
+        if(resources.size() == 1 && threads.size() > 1){ // paralelna obrada nad jednim fajlom
             int stepSize = (int)Math.ceil(Double.valueOf(totalRows) / threads.size());
             if(stepSize % Step != 0)
                 stepSize += (Step - stepSize % Step);
             int currentRow = 0;
             for(PixelationThread thread : threads){
                 thread.setParameters(intermediateFolderPath, Math.min(currentRow, totalRows), Math.min((currentRow += stepSize), totalRows), true, resources.keySet().iterator().next());
-               // thread.setParent(this);
             }
-        } else { // if processing multiple files with one or multiple threads or processing one file with one thread
+        } else { // obrada više fajlova (jedna ili više niti)
             if(resources.size() <= threads.size()){
                 int i = 0;
                 for(Resource resource : resources.keySet()){
                     threads.get(i++).setParameters(intermediateFolderPath, 0, 0, false, resource);
-                   // threads.get(i++).setParent(this);
                 }
             } else {
                 List<Integer> indexes = IntStream.range(0, resources.keySet().size()).boxed().collect(Collectors.toList());
@@ -172,8 +143,27 @@ public class PixelationTask extends SchedulableTask implements Serializable {
                     for(Integer index : currentIndexes)
                         pr.add(res.get(index));
                     threads.get(i).setParameters(intermediateFolderPath, pr);
-                    //threads.get(i).setParent(this);
                 }
+            }
+        }
+    }
+
+    private void finish(){
+        dateTimeFinished = LocalDateTime.now();
+        System.out.println("In finish() method!");
+        terminate();
+        Utility.Scheduler.completedTask(this);
+        if(resources.size() == 1 && threads.size() > 1){
+            System.out.println(this.toString() + " is copying data ...");
+            // ako se obrađivao jedan resurs od strane više niti, treba da se kopira iz intermediate u output folder
+            resources.forEach((r, v) -> resources.replace(r, true));
+            String resourceName = resources.keySet().iterator().next().name;
+            Path source = Paths.get(intermediateFolderPath + File.separator + "Pixelation-" + resourceName);
+            Path destination = Paths.get(outputFolderPath + File.separator + "Pixelated-T" + id + "-" + resourceName);
+            try{
+                Files.copy(source, destination, StandardCopyOption.COPY_ATTRIBUTES);
+            } catch (IOException e){
+                e.printStackTrace();
             }
         }
     }
@@ -195,7 +185,6 @@ public class PixelationTask extends SchedulableTask implements Serializable {
             if(totalRows == 0)
                 return 0.0d;
             progress = Double.valueOf(processedRows).doubleValue() / totalRows;
-           // System.out.println("progress = " + progress);
             return progress;
         }
     }
@@ -208,8 +197,14 @@ public class PixelationTask extends SchedulableTask implements Serializable {
     }
 
     @Override
-    public void restore(ProgressBar progressBar, Consumer<SchedulableTask> updateProgress){
-        super.restore(progressBar, updateProgress);
+    public void pause(boolean user){
+        super.pause(user);
+        threads.forEach(t -> t.token.pause());
+    }
+
+    @Override
+    public void restore(Consumer<SchedulableTask> updateProgress){
+        super.restore(updateProgress);
         this.processingLock = new Object();
         PixelationTask.Step = Utility.PixelationStepSize;
         PixelationTask.Extension = Utility.ResourceExtension;
@@ -220,21 +215,20 @@ public class PixelationTask extends SchedulableTask implements Serializable {
         public String intermediatePath;
         public int processingRow, endRow;
         public boolean singleResourceProcessing;
-        public CancellationToken token = new CancellationToken();
+        public PauseToken token = new PauseToken();
         public boolean completed;
-        // storage of original files (in Resource) and intermediate files (String)
+
+        // ključ je resurs (u kom se nalazi originalni fajl)
+        // vrijednost je putanja do fajla u kom će se smjestiti djelimično obrađen resurs
         public HashMap<Resource, String> resources = new HashMap<>();
-        // storage of original files and starting indexes of processing them
+
+        // vrijednost je redni broj reda kojeg data nit obrađuje
         public HashMap<Resource, Integer> indexes = new HashMap<>();
 
         public PixelationThread() {
             token.paused = true;
             this.completed = true;
         }
-
-//        public PixelationThread(String intermediatePath, int beginRow, int endRow, boolean singleResourceProcessing, Resource... resources){
-//            setParameters(intermediatePath, beginRow, endRow, singleResourceProcessing, resources);
-//        }
 
         public void setParameters(String intermediatePath, int beginRow, int endRow, boolean singleResourceProcessing, Resource... resources){
             this.endRow = endRow;
@@ -268,8 +262,6 @@ public class PixelationTask extends SchedulableTask implements Serializable {
                 this.j = j;
                 this.value = value;
             }
-
-            // public PixelLocation() { }
         }
 
         @Override
@@ -304,9 +296,9 @@ public class PixelationTask extends SchedulableTask implements Serializable {
                             save(processedPixels, resource.getKey(), resource.getValue(), null);
                             Utility.Scheduler.cancelTask(PixelationTask.this);
                             System.out.println("Thread [" + getId() + ", T" +PixelationTask.this.id + "] finished.");
+                            System.out.println("Terminated? " + PixelationTask.this.terminated);
                             return;
                         }
-                        //System.out.println("started " + y);
                         for(int x = 0; x < originalImage.getWidth() && x < originalImage.getWidth(); x += PixelationTask.Step){
                             List<Color> colors = new ArrayList<>();
                             for(int i = y; i < y + PixelationTask.Step && i < endRow; ++i) {
@@ -324,13 +316,13 @@ public class PixelationTask extends SchedulableTask implements Serializable {
                                 for (int j = x; j < x + PixelationTask.Step && j < originalImage.getWidth(); ++j)
                                     processedPixels.add(new PixelLocation(i, j, averageColor.getRGB()));
                         }
-                        // update progress
+                        // ažuriraj stanje obrade
                         synchronized (PixelationTask.this.processingLock){
                             PixelationTask.this.processedRows += PixelationTask.Step;
                         }
-                        Platform.runLater(() -> PixelationTask.this.updateProgress.accept(PixelationTask.this));
-                        // TODO: Update this
-                        Thread.sleep(50);
+                        if(PixelationTask.this.updateProgress != null)
+                            PixelationTask.this.updateProgress.accept(PixelationTask.this);
+                        Thread.sleep(100);
                     }
 
                     // kada je jedan resurs obrađen, osloboditi ga

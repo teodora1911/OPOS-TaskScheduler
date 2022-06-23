@@ -17,12 +17,10 @@ public class ScheduleTasksEvent extends SchedulingEvent {
     @Override
     public void execute() {
         int currentlyExecutingTasksCount = scheduler.executingTasks.size();
-        SchedulableTask minPriorityNonExecutingTask = scheduler.pendingTasks.peek();
+        SchedulableTask minPriorityNonExecutingTask = scheduler.pendingTasks.poll();
 
-        if(minPriorityNonExecutingTask == null){
-           // System.out.println("minPriorityNonExecutingTask == null");
+        if(minPriorityNonExecutingTask == null)
             return;
-        }
         if(currentlyExecutingTasksCount < scheduler.maxParallelTasks && minPriorityNonExecutingTask.parallelismDegree <= scheduler.numberOfFreeCores){
             scheduler.numberOfFreeCores -= minPriorityNonExecutingTask.parallelismDegree;
             scheduler.executingTasks.add(minPriorityNonExecutingTask);
@@ -30,7 +28,6 @@ public class ScheduleTasksEvent extends SchedulingEvent {
                 minPriorityNonExecutingTask.resume(false);
             else 
                 minPriorityNonExecutingTask.start();
-            scheduler.pendingTasks.poll();
         } else if (scheduler.preemptive){
             List<SchedulableTask> lowerPriorityExecutingTasks = scheduler.executingTasks.stream().filter(t -> t.getTaskPriority() > minPriorityNonExecutingTask.getTaskPriority()).collect(Collectors.toList());
             if(!lowerPriorityExecutingTasks.isEmpty() && lowerPriorityExecutingTasks.stream().mapToInt(t -> t.parallelismDegree).sum() >= minPriorityNonExecutingTask.parallelismDegree){
@@ -46,16 +43,18 @@ public class ScheduleTasksEvent extends SchedulingEvent {
                         break;
                     }
                 }
-                scheduler.pendingTasks.poll();
                 scheduler.executingTasks.add(minPriorityNonExecutingTask);
                 if(minPriorityNonExecutingTask.started)
                     minPriorityNonExecutingTask.resume(false);
                 else
                     minPriorityNonExecutingTask.start();
+            } else {
+                scheduler.pendingTasks.offer(minPriorityNonExecutingTask);
             }
+        } else {
+            scheduler.pendingTasks.offer(minPriorityNonExecutingTask);
         }
-
-        Collection<SchedulableTask> allTasks = Stream.of(scheduler.executingTasks, scheduler.pendingTasks, scheduler.userPausedTasks).flatMap(Collection::stream).collect(Collectors.toList());
-        scheduler.sendTasks.accept(allTasks);
+        if(scheduler.update != null)
+            scheduler.update.accept(scheduler.getAllTasks());
     }
 }

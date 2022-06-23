@@ -1,7 +1,6 @@
 package scheduler.task;
 
 import application.Utility;
-import javafx.scene.control.ProgressBar;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -11,47 +10,42 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 public abstract class SchedulableTask extends Thread implements Serializable {
-
-    public static final int MaxPriority = 1;
     public int id;
-    protected TaskType type;
-    protected ReentrantLock readWriteLock = new ReentrantLock();  // za upisivanje / čitanje resursa od strane više niti
-    protected Integer givenPriority;  // originalni prioritet koji je korisnik specifikovao
-    protected Integer priority;       // priotitet koji ima kada zauzme resurs(e) - PCP
-    protected LocalDateTime deadline;
-    protected Long givenExecutionTime; // u milisekundama
+    public TaskType type;
+    public ReentrantLock readWriteLock = new ReentrantLock();
+    public Integer priority;
+    public LocalDateTime deadline;
+    public Long givenExecutionTime; // u milisekundama
     public Integer parallelismDegree;
-    protected TaskState state;
-    protected Boolean terminated = false;
-    public boolean started = false;
+    public TaskState state;
+    public Boolean terminated;
+    public transient boolean started = false;
 
-    // vrijednost mape reprezentuje da li se uspjesno obradio resurs
-    protected HashMap<Resource, Boolean> resources = new HashMap<>();
+    // vrijednost reprezentuje da li se uspješno obrađen resurs
+    public HashMap<Resource, Boolean> resources = new HashMap<>();
     public String outputFolderPath;
 
-    protected CancellationToken schedulerToken = new CancellationToken();
-    protected CancellationToken userToken = new CancellationToken();
+    public PauseToken schedulerToken = new PauseToken();
+    public PauseToken userToken = new PauseToken();
 
     public transient Instant lastAccessed;
-    protected long executingTime = 0; // u milisekundama
-    protected Double progress = 0.0;
-    public transient ProgressBar progressBar;
-    protected transient Consumer<SchedulableTask> updateProgress;
+    public long executingTime = 0; // u milisekundama
+    public LocalDateTime dateTimeFinished;
+    public Double progress = 0.0;
+    public transient Consumer<SchedulableTask> updateProgress;
 
     public SchedulableTask(){
-        id = Utility.TaskCounter++;
+        id = Utility.Scheduler.nextTaskID++;
         setTaskState(TaskState.CREATED);
         this.terminated = false;
     }
 
-    public SchedulableTask(int priority, TaskType type, long executionTime, LocalDateTime deadline, int parallelismDegree, String outputFolderPath, ArrayList<Resource> resources, ProgressBar progressBar, Consumer<SchedulableTask> updateProgress){
+    public SchedulableTask(int priority, TaskType type, long executionTime, LocalDateTime deadline, int parallelismDegree, String outputFolderPath, ArrayList<Resource> resources, Consumer<SchedulableTask> updateProgress){
         this();
-        this.givenPriority = priority;
         this.priority = priority;
         this.type = type;
         this.givenExecutionTime = executionTime;
@@ -68,7 +62,6 @@ public abstract class SchedulableTask extends Thread implements Serializable {
         this.outputFolderPath = outputFolderPath;
         for(Resource resource : resources)
             this.resources.put(resource, false);
-        this.progressBar = progressBar;
         this.updateProgress = updateProgress;
     }
 
@@ -94,20 +87,8 @@ public abstract class SchedulableTask extends Thread implements Serializable {
         } else { return false; }
     }
 
-    public void setTaskPriority(int priority){
-        synchronized (this.priority){
-            this.priority = priority;
-        }
-    }
-
     public int getTaskPriority(){
-        synchronized (priority){
-            return this.priority;
-        }
-    }
-
-    public int getGivenPriority(){
-        return givenPriority;
+        return priority;
     }
 
     public void setTaskState(TaskState state){
@@ -129,18 +110,19 @@ public abstract class SchedulableTask extends Thread implements Serializable {
     }
 
     public void terminate() {
+        Utility.Scheduler.unlockResources(this);
         synchronized (terminated){
-            if(!terminated)
-                terminated = true;
-            else
-                System.out.println(this.toString() + " is already terminated!");
+            terminated = true;
             userToken.resume();
             schedulerToken.resume();
-            Utility.Scheduler.unlockResources(this);
         }
     }
 
     public void pause(boolean user){
+        Utility.Scheduler.unlockResources(this);
+        synchronized (terminated){
+            lastAccessed = null;
+        }
         if(user) {
             userToken.pause();
             setTaskState(TaskState.PAUSED);
@@ -189,8 +171,7 @@ public abstract class SchedulableTask extends Thread implements Serializable {
         return "Task [id: " + id + ", priority: " + getTaskPriority() + "]";
     }
 
-    public void restore(ProgressBar progressBar, Consumer<SchedulableTask> updateProgress){
-        this.progressBar = progressBar;
+    public void restore(Consumer<SchedulableTask> updateProgress){
         this.updateProgress = updateProgress;
         this.schedulerToken.lock = new Object();
         this.userToken.lock = new Object();
@@ -201,16 +182,5 @@ public abstract class SchedulableTask extends Thread implements Serializable {
         } catch (IOException e){
             e.printStackTrace();
         }
-    }
-
-    public static SchedulableTask deserialize(String filename){
-        SchedulableTask task = null;
-        try(ObjectInputStream in = new ObjectInputStream(new FileInputStream(filename))){
-            task = (SchedulableTask) in.readObject();
-        } catch (IOException | ClassNotFoundException e){
-            e.printStackTrace();
-        }
-
-        return task;
     }
 }

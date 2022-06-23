@@ -19,16 +19,13 @@ public class CancelTaskEvent extends SchedulingEvent {
     public void execute() {
         if(taskToCancel == null)
             return;
-        if(scheduler.userPausedTasks.contains(taskToCancel)){
-            taskToCancel.terminate();
+        taskToCancel.terminate();
+        System.out.println("Terminating task!");
+        if(scheduler.userPausedTasks.contains(taskToCancel))
             scheduler.userPausedTasks.remove(taskToCancel);
-        }
-        if(scheduler.pendingTasks.contains(taskToCancel)){
-            taskToCancel.terminate();
+        if(scheduler.pendingTasks.contains(taskToCancel))
             scheduler.pendingTasks.remove(taskToCancel);
-        }
         if(scheduler.executingTasks.contains(taskToCancel)){
-            taskToCancel.terminate();
             scheduler.executingTasks.remove(taskToCancel);
             scheduler.numberOfFreeCores += taskToCancel.parallelismDegree;
         }

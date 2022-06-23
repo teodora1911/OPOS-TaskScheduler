@@ -13,20 +13,21 @@ import java.util.Properties;
 
 public final class Utility {
 
-    // instance of scheduler
     public static TaskScheduler Scheduler;
 
-    // resources data
+    // putanje do foldera u kojima se nalaze/smještaju resursi
     public static String InputFolderPath;
     public static String IntermediateFolderPath;
     public static String OutputFolderPath;
+    // putanja serijalizovanih zadataka
     public static String SerializedTasksFolderPath;
+    public static String AutosavedSchedulerPath;
 
-    // default values for scheduler
+    // podrazumijevane vrijednosti raspoređivača
     public static Integer NumberOfConcurrentlyExecutingTasks;
     public static Integer NumberOfAvailableCores;
 
-    // default values for task
+    // podrazumijevane vrijednosti za zadatake
     public static Integer DefaultTaskPriority;
     public static Integer MinTaskPriority;
     public static Integer DefaultTaskParallelismDegree;
@@ -46,13 +47,13 @@ public final class Utility {
         OutputFolderPath = properties.getProperty("output");
         IntermediateFolderPath = properties.getProperty("intermediate");
         SerializedTasksFolderPath = properties.getProperty("tasks");
+        AutosavedSchedulerPath = properties.getProperty("scheduler-autosaved");
 
         NumberOfConcurrentlyExecutingTasks = Integer.parseInt(properties.getProperty("default-parallel-tasks"));
         NumberOfAvailableCores = Integer.parseInt(properties.getProperty("default-cores"));
 
         PixelationTask.Extension = ResourceExtension = properties.getProperty("extension");
         PixelationTask.Step = PixelationStepSize = Integer.parseInt(properties.getProperty("pixelation-step"));
-        TaskCounter = Integer.parseInt(properties.getProperty("counter-start"));
         DefaultTaskPriority = Integer.parseInt(properties.getProperty("default-priority"));
         MinTaskPriority = Integer.parseInt(properties.getProperty("min-priority"));
         DefaultTaskParallelismDegree = Integer.parseInt(properties.getProperty("default-parallelism-degree"));
@@ -60,11 +61,14 @@ public final class Utility {
     }
 
     public static void setScheduler(int availableCores, int maxConcurrentTasks, boolean preemptive){
-        Scheduler = new TaskScheduler(availableCores, maxConcurrentTasks, preemptive);
-        File inputFolder = new File(InputFolderPath);
-        for(File file : inputFolder.listFiles()){
-            //System.out.println(file.getAbsolutePath());
-            Scheduler.resources.put(new Resource(file), null);
+        if(Scheduler == null){
+            System.out.println("Making new scheduler.");
+            Scheduler = new TaskScheduler(availableCores, maxConcurrentTasks, preemptive);
+            File inputFolder = new File(InputFolderPath);
+            for(File file : inputFolder.listFiles())
+                Scheduler.resources.put(new Resource(file), null);
+        } else {
+            System.out.println("Scheduler is already assigned.");
         }
     }
 }
